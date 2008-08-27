@@ -3,6 +3,7 @@ abstract: 'Perl module to judge SPAMer.'
 author:
   - 'Masatoshi Mizuno E<lt>lushe(E<64>)cpan.orgE<gt>'
 build_requires:
+  File::Temp: 0
   Test::More: 0
   Test::Perl::Critic: 0
   Test::Pod: 0
@@ -20,6 +21,7 @@ no_index:
     - t
 requires:
   File::Slurp: 9999.13
-  HTTP::Lite: 2.1.6
+  Jcode: 2.07
+  LWP::Simple: 0
   Net::DNS: 0.63
-version: 0.04
+version: 0.05

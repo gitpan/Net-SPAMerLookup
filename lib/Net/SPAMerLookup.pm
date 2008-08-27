@@ -2,14 +2,14 @@ package Net::SPAMerLookup;
 #
 # Masatoshi Mizuno E<lt>lusheE(<64>)cpan.orgE<gt>
 #
-# $Id: SPAMerLookup.pm 366 2008-08-26 05:15:13Z lushe $
+# $Id: SPAMerLookup.pm 367 2008-08-27 03:28:26Z lushe $
 #
 use strict;
 use warnings;
 use Net::DNS;
 use Net::Domain::TldMozilla;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my @RBL= qw/
  all.rbl.jp
@@ -193,7 +193,8 @@ And, HASH that 'check_rbl' returned is returned as it is if included.
 
 =head1 SEE ALSO
 
-L<Net::DNS>;
+L<Net::DNS>,
+L<Net::Domain::TldMozilla>,
 
 =head1 AUTHOR
 

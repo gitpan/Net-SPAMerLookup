@@ -8,9 +8,11 @@ author        'Masatoshi Mizuno E<lt>lushe(E<64>)cpan.orgE<gt>';
 license       'perl';
 
 requires 'File::Slurp' => '9999.13';
-requires 'HTTP::Lite'  => '2.1.6';
+requires 'Jcode'       => '2.07';
 requires 'Net::DNS'    => '0.63';
+requires 'LWP::Simple';
 
+build_requires 'File::Temp';
 build_requires 'Test::More';
 build_requires 'Test::Pod';
 build_requires 'Test::Perl::Critic';
