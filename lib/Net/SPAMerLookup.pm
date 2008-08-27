@@ -2,14 +2,14 @@ package Net::SPAMerLookup;
 #
 # Masatoshi Mizuno E<lt>lusheE(<64>)cpan.orgE<gt>
 #
-# $Id: SPAMerLookup.pm 367 2008-08-27 03:28:26Z lushe $
+# $Id: SPAMerLookup.pm 368 2008-08-27 11:58:44Z lushe $
 #
 use strict;
 use warnings;
 use Net::DNS;
 use Net::Domain::TldMozilla;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 my @RBL= qw/
  all.rbl.jp
@@ -54,12 +54,15 @@ sub check_rbl {
 		  result => [ map{$_->ptrdname}grep($_->type eq 'PTR', $q->answer) ],
 		  };
 	  }: do {
-		my($domain)= $args=~m{([^\.]+\.(?:$TLDregex))$};
+		my $domain;
 		sub {
 			my $q= $dns->search("$args.$_[0]", 'A') || do {
-				return 0 if (! $domain or $domain eq $args);
+				$domain
+				||= do { $args=~m{([^\.]+\.(?:$TLDregex))$} ? $1 : 'unmatch' };
+				return 0 if ($args eq $domain or $domain eq 'unmatch');
+				my $result= $dns->search("$domain.$_[0]", 'A') || return 0;
 				$args= $domain;
-				$dns->search("$args.$_[0]", 'A') || return 0;
+				$result;
 			  };
 			{
 			  name  => $args,
