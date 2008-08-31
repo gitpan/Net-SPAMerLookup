@@ -2,7 +2,7 @@ package Net::Domain::TldMozilla;
 #
 # Masatoshi Mizuno E<lt>lusheE(<64>)cpan.orgE<gt>
 #
-# $Id: TldMozilla.pm 366 2008-08-26 05:15:13Z lushe $
+# $Id: TldMozilla.pm 371 2008-08-31 15:09:24Z lushe $
 #
 use strict;
 use warnings;
@@ -10,13 +10,14 @@ use LWP::Simple;
 use File::Slurp;
 use Jcode;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+
+our $SOURCE_URL= 'http://mxr.mozilla.org/firefox/source/netwerk/dns/src/effective_tld_names.dat?raw=1';
 
 sub get_tld {
 #
 # ------------------------------------------------------------------------------------------
-my $url = $ENV{TLD_MOZILLA_URL}
-   || 'http://mxr.mozilla.org/firefox/source/netwerk/dns/src/effective_tld_names.dat?raw=1';
+my $url= $ENV{TLD_MOZILLA_URL} || $SOURCE_URL;
 my $temp= ($ENV{TLD_MOZILLA_TEMP} || '/tmp'). '/mozilla_tld.cache';
 # ------------------------------------------------------------------------------------------
 #
@@ -68,6 +69,10 @@ Net::Domain::TldMozilla - TLD of the Mozilla source is returned.
 =head1 DESCRIPTION
 
 TLD is acquired and returned from the source open to the public on the Mozilla site.
+
+Please set HTTP_PROXY of the environment variable if you use Proxy.
+
+  $ENV{HTTP_PROXY}= '192.168.0.1:8080';
 
 =head1 METHODS
 

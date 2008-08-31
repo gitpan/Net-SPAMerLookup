@@ -2,14 +2,14 @@ package Net::SPAMerLookup;
 #
 # Masatoshi Mizuno E<lt>lusheE(<64>)cpan.orgE<gt>
 #
-# $Id: SPAMerLookup.pm 368 2008-08-27 11:58:44Z lushe $
+# $Id: SPAMerLookup.pm 371 2008-08-31 15:09:24Z lushe $
 #
 use strict;
 use warnings;
 use Net::DNS;
 use Net::Domain::TldMozilla;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 my @RBL= qw/
  all.rbl.jp
@@ -122,6 +122,10 @@ Net::SPAMerLookup - Perl module to judge SPAMer.
 =head1 DESCRIPTION
 
 SPAMer is judged by using RBL.
+
+Please set HTTP_PROXY of the environment variable if you use Proxy.
+
+see L<Net::Domain::TldMozilla>.
 
 =head1 SETTING RBL USED
 
