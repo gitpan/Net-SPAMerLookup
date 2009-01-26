@@ -2,36 +2,45 @@ package Net::SPAMerLookup;
 #
 # Masatoshi Mizuno E<lt>lusheE(<64>)cpan.orgE<gt>
 #
-# $Id: SPAMerLookup.pm 371 2008-08-31 15:09:24Z lushe $
+# $Id: SPAMerLookup.pm 376 2009-01-26 02:13:00Z lushe $
 #
 use strict;
 use warnings;
 use Net::DNS;
 use Net::Domain::TldMozilla;
 
-our $VERSION = '0.07';
+our $VERSION = '0.10';
 
-my @RBL= qw/
- all.rbl.jp
- url.rbl.jp
- dyndns.rbl.jp
- notop.rbl.jp
- bl.spamcop.net
- list.dsbl.org
- sbl-xbl.spamhaus.org
- bsb.empty.us
- bsb.spamlookup.net
+our @RBL_IP= qw/
  niku.2ch.net
+ all.rbl.jp
+ list.dsbl.org
+ /;
+our @RBL_URI= qw/
+ url.rbl.jp
+ notop.rbl.jp
+ all.rbl.jp
  /;
 
-my $TLDregex= do {
+our $TLDregex= do {
 	my $tld= Net::Domain::TldMozilla->get_tld;
 	join '|', map{quotemeta($_)}@$tld;
   };
 
 sub import {
-	my $class= shift;
-	@RBL= @_ if @_;
+	my $class= shift; $_[0] || return $class;
+	if (ref $_[0]) {
+		if (ref($_[0]) eq 'HASH') {
+			@RBL_URI= @{$_[0]->{URI}} if $_[0]->{URI};
+			@RBL_IP = @{$_[0]->{IP}}  if $_[0]->{IP};
+		} elsif (ref($_[0]) eq 'ARRAY') {
+			@RBL_URI= @{$_[0]};
+		} else {
+			die __PACKAGE__.' - Argument of unsupported.';
+		}
+	} else {
+		@RBL_URI= @_;
+	}
 	$class;
 }
 sub new {
@@ -40,20 +49,32 @@ sub new {
 sub check_rbl {
 	my $self= shift;
 	my $args= shift || die q{I want 'host name' or 'IP address' or 'URL'.};
-	if ($args=~m{^https?\://([^/\:]+)}) {
+	my $attr= shift || {};
+	my $timeout= $attr->{timeout} || $self->[0] || 10;
+	$args=~s/\s+//;
+	if ($args=~m{^(?:ftps?|https?|gopher|news|nntp|telnet|wais)\://([^/\:]+)}) {
 		$args= $1;
 		$args=~s/^[^\@]+\@//;
+		$args=~s/^[^\:]+\://;
+		$args=~m{^([^/\:]+)} || die q{Invalid argument.};
+		$args= $1;
+	} elsif ($args=~m{^(?:mailto)\:(.+)}) {
+		$args= $1;
+		if ($args=~m{\@([^\@]+)$}) { $args= $1 }
 	} elsif ($args=~m{\@([^\@]+)$}) {
 		$args= $1;
 	}
 	my $dns= Net::DNS::Resolver->new;
+	my $is_ip;
 	my $check= $args=~m{^\d{1.3}\.\d{1.3}\.\d{1.3}\.\d{1.3}$} ? sub {
+		$is_ip= 1;
 		my $q= $dns->search("$args.$_[0]", 'PTR') || return 0;
 		{
 		  address=> $args,
 		  result => [ map{$_->ptrdname}grep($_->type eq 'PTR', $q->answer) ],
 		  };
 	  }: do {
+		$is_ip= 0;
 		my $domain;
 		sub {
 			my $q= $dns->search("$args.$_[0]", 'A') || do {
@@ -70,10 +91,23 @@ sub check_rbl {
 			  };
 		  };
 	  };
-	for (@RBL) {
-		my $hit= $check->($_) || next;
-		return { %$hit, RBL=> $_ };
-	}
+	eval {
+		local $SIG{ALRM}= sub { die 'Timeout' };
+		alarm $timeout;
+		for ($is_ip ? @RBL_IP: @RBL_URI) {
+			my $hit= $check->($_) || next;
+			alarm 0;
+			return { %$hit, RBL=> $_ };
+		}
+		alarm 0;
+	  };
+	if (my $error= $@) { $self->is_error($error) }
+	0;
+}
+sub is_error {
+	my $self= shift;
+	return $self->[1] unless @_;
+	$self->[1]= shift;
 	0;
 }
 sub is_spamer {
@@ -92,18 +126,10 @@ Net::SPAMerLookup - Perl module to judge SPAMer.
 
 =head1 SYNOPSIS
 
-  use Net::SPAMerLookup qw/
-    all.rbl.jp
-    url.rbl.jp
-    dyndns.rbl.jp
-    notop.rbl.jp
-    bl.spamcop.net
-    list.dsbl.org
-    sbl-xbl.spamhaus.org
-    bsb.empty.us
-    bsb.spamlookup.net
-    niku.2ch.net
-    /;
+  use Net::SPAMerLookup {
+    IP => [qw/ niku.2ch.net all.rbl.jp list.dsbl.org /],
+    URI=> [qw/ url.rbl.jp notop.rbl.jp all.rbl.jp /],
+    };
   
   my $spam= Net::SPAMerLookup->new;
   if ($spam->check_rbl($TARGET)) {
@@ -187,6 +213,10 @@ Information returned from RBL enters by the ARRAY reference.
     print "There is no problem.";
     ......
     ...
+
+=head2 is_error
+
+error.
 
 =head2 is_spamer ([TARGET_LIST])
 

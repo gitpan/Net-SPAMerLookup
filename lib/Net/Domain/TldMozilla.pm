@@ -2,7 +2,7 @@ package Net::Domain::TldMozilla;
 #
 # Masatoshi Mizuno E<lt>lusheE(<64>)cpan.orgE<gt>
 #
-# $Id: TldMozilla.pm 371 2008-08-31 15:09:24Z lushe $
+# $Id: TldMozilla.pm 375 2009-01-22 06:17:35Z lushe $
 #
 use strict;
 use warnings;
@@ -10,20 +10,21 @@ use LWP::Simple;
 use File::Slurp;
 use Jcode;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 our $SOURCE_URL= 'http://mxr.mozilla.org/firefox/source/netwerk/dns/src/effective_tld_names.dat?raw=1';
 
 sub get_tld {
 #
 # ------------------------------------------------------------------------------------------
-my $url= $ENV{TLD_MOZILLA_URL} || $SOURCE_URL;
+my $span= $ENV{TLD_MOZILLA_DOWN_SPAN} || 3;
+my $url = $ENV{TLD_MOZILLA_URL} || $SOURCE_URL;
 my $temp= ($ENV{TLD_MOZILLA_TEMP} || '/tmp'). '/mozilla_tld.cache';
 # ------------------------------------------------------------------------------------------
 #
 	my $TLD= do {
 		my $read= sub { my $plain= read_file($temp); [ split /\s*\n\s*/, $plain ] };
-		(! -e $temp or (-M _)> 3) ? do {
+		(! -e $temp or (-M _)> $span) ? do {
 			if (my $source= LWP::Simple::get($url)) {
 				my @tld;
 				for (split /\n/, $source) {
